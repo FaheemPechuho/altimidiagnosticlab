@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Sparkles,
   CalendarCheck,
+  CalendarPlus,
   UserCheck,
   FileCheck2,
 } from "lucide-react";
@@ -74,10 +75,12 @@ export default function HomeSamplingCTA() {
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
               <a
-                href={`tel:${siteConfig.mobile}`}
+                href={siteConfig.calendly}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-base font-bold text-primary transition-all hover:shadow-xl hover:shadow-white/20"
               >
-                <Phone className="h-4 w-4" />
+                <CalendarPlus className="h-4 w-4" />
                 Schedule Now
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </a>

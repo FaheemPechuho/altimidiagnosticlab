@@ -1,12 +1,16 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState, type FormEvent } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Phone,
   Mail,
   MapPin,
   Clock,
   Send,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import SectionHeading from "./ui/SectionHeading";
 import { siteConfig, services } from "@/lib/constants";
@@ -19,7 +23,51 @@ const contactInfo = [
   { icon: Clock, label: "Hours", value: "Mon–Sat: 8:00 AM – 10:00 PM", href: "#" },
 ];
 
+type FormStatus = "idle" | "sending" | "success" | "error";
+
 export default function ContactUs() {
+  const [status, setStatus] = useState<FormStatus>("idle");
+  const [statusMessage, setStatusMessage] = useState("");
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setStatus("sending");
+
+    const form = e.currentTarget;
+    const data = {
+      name: (form.elements.namedItem("name") as HTMLInputElement).value.trim(),
+      email: (form.elements.namedItem("email") as HTMLInputElement).value.trim(),
+      phone: (form.elements.namedItem("phone") as HTMLInputElement).value.trim(),
+      service: (form.elements.namedItem("service") as HTMLSelectElement).value,
+      message: (form.elements.namedItem("message") as HTMLTextAreaElement).value.trim(),
+    };
+
+    try {
+      const res = await fetch("/send-mail.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+
+      if (res.ok && result.success) {
+        setStatus("success");
+        setStatusMessage(result.message);
+        form.reset();
+        setTimeout(() => setStatus("idle"), 6000);
+      } else {
+        setStatus("error");
+        setStatusMessage(result.message || "Something went wrong. Please try again.");
+        setTimeout(() => setStatus("idle"), 5000);
+      }
+    } catch {
+      setStatus("error");
+      setStatusMessage("Network error. Please check your connection and try again.");
+      setTimeout(() => setStatus("idle"), 5000);
+    }
+  }
+
   return (
     <section id="contact" className="section-padding bg-white">
       <div className="container-custom">
@@ -38,7 +86,7 @@ export default function ContactUs() {
             transition={{ duration: 0.6 }}
           >
             <form
-              onSubmit={(e) => e.preventDefault()}
+              onSubmit={handleSubmit}
               className="space-y-5 rounded-2xl bg-lightbg p-6 md:p-8"
             >
               <div className="grid gap-5 sm:grid-cols-2">
@@ -51,10 +99,12 @@ export default function ContactUs() {
                   </label>
                   <input
                     id="name"
+                    name="name"
                     type="text"
                     placeholder="Your name"
                     className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
                     required
+                    disabled={status === "sending"}
                   />
                 </div>
                 <div>
@@ -66,10 +116,12 @@ export default function ContactUs() {
                   </label>
                   <input
                     id="email"
+                    name="email"
                     type="email"
                     placeholder="your@email.com"
                     className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
                     required
+                    disabled={status === "sending"}
                   />
                 </div>
               </div>
@@ -84,9 +136,11 @@ export default function ContactUs() {
                   </label>
                   <input
                     id="phone"
+                    name="phone"
                     type="tel"
                     placeholder="+92 XXX XXXXXXX"
                     className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    disabled={status === "sending"}
                   />
                 </div>
                 <div>
@@ -98,7 +152,9 @@ export default function ContactUs() {
                   </label>
                   <select
                     id="service"
+                    name="service"
                     className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    disabled={status === "sending"}
                   >
                     <option value="">Select a service</option>
                     {services.map((s) => (
@@ -119,20 +175,54 @@ export default function ContactUs() {
                 </label>
                 <textarea
                   id="message"
+                  name="message"
                   rows={4}
                   placeholder="How can we help you?"
                   className="w-full resize-none rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
                   required
+                  disabled={status === "sending"}
                 />
               </div>
 
-              <button
-                type="submit"
-                className="group inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3.5 font-semibold text-white transition-all hover:bg-primary-dark hover:shadow-lg sm:w-auto"
-              >
-                Send Message
-                <Send className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </button>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <button
+                  type="submit"
+                  disabled={status === "sending"}
+                  className="group inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3.5 font-semibold text-white transition-all hover:bg-primary-dark hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+                >
+                  {status === "sending" ? (
+                    <>
+                      Sending...
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </>
+                  ) : (
+                    <>
+                      Send Message
+                      <Send className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </>
+                  )}
+                </button>
+
+                <AnimatePresence>
+                  {(status === "success" || status === "error") && (
+                    <motion.p
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0 }}
+                      className={`flex items-center gap-1.5 text-sm font-medium ${
+                        status === "success" ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {status === "success" ? (
+                        <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                      )}
+                      {statusMessage}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </div>
             </form>
           </motion.div>
 

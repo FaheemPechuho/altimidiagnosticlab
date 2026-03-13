@@ -6,10 +6,11 @@ export const siteConfig = {
     "Accurate, reliable diagnostic services in Karachi. Hematology, Microbiology, Clinical Chemistry, Histopathology, Holter Monitoring & Free Home Sampling.",
   url: "https://altimidiagnosticlab.com",
   phone: "+92-21-3-534-4476",
-  mobile: "+92-330-3580462",
+  mobile: "+92-330-3580452",
   email: "info@altimidiagnosticlab.com",
   address:
     "House of Altimi, Plot No. 21-C, Khalid Commercial Street #4, DHA Phase-7 Ext, Karachi",
+  calendly: "https://calendly.com/altimidiagnosticlab-info/30min",
   chairman: {
     name: "Dr. Fazlullah Pechuho",
     title: "Chairman",
